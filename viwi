@@ -1,0 +1,42 @@
+#!/bin/sh
+set -e
+
+roll="${ROLL:-24BME0352}"
+pass="${PASS:-manasvin}"
+
+login_and_check() {
+    echo "Connecting to Pronto server...thoda sabr karo :)"
+    
+    output=$(wget \
+      --quiet \
+      --post-data="userId=$roll&password=$pass&serviceName=ProntoAuthentication&Submit22=Login" \
+      --header="Content-Type: application/x-www-form-urlencoded" \
+      --output-document=/dev/null \
+      --server-response \
+      http://phc.prontonetworks.com/cgi-bin/authlogin?URI=http://captive.apple.com/hotspot-detect.html 2>&1 \
+      | awk '/HTTP\// {print $2}')
+
+    echo "Received HTTP response code: $output"
+    
+    if [ "$output" = "000" ]; then
+        echo "Check network connectivity. Quitting."
+        exit 1
+    elif [ "$output" = "200" ]; then
+        echo "Maje Maje Internet Use Karo !!"
+        return 0
+    else
+        echo "Login failed with response code: $output ab chal phut !"
+        return 1
+    fi
+}
+
+echo "Starting login process..................."
+login_and_check
+
+while [ "$?" != "0" ]; do
+    echo "Something went wrong, retrying.............. retry abhi kaam nahi krta"
+    login_and_check
+done
+
+echo "Finished successfully. ok bye :("
+
